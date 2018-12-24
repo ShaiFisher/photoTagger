@@ -1,0 +1,1 @@
+var photosTaggerApp = angular.module('photosTaggerApp', ['ngTagsInput']);

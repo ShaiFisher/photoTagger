@@ -1,0 +1,23 @@
+{
+  "name": "phototagger",
+  "version": "1.0.0",
+  "description": "Tag photos easily with HTML UI and NodeJS backend",
+  "main": "PhotoTagger.js",
+  "dependencies": {
+    "clipboardy": "^1.2.3",
+    "interval": "^0.1.1",
+    "jimp": "^0.6.0",
+    "ng-tags-input": "^3.2.0",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "photo",
+    "tag"
+  ],
+  "author": "Shai Fisher",
+  "license": "ISC"
+}
