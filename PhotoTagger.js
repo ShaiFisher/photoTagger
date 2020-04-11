@@ -261,15 +261,21 @@ function Photo(photo, filePath) {
 		if (!oldTagsStr) {
 			var ext = path.extname(photo.fileName);
 			var base = path.basename(photo.fileName, ext);
-			//console.log('new tags: base: ' + base + ', ext: ' + ext);
-			newFileName = base + ' ' + newTagsStr + ext;
+			//console.log('new tags: base: "' + base + '", ext: "' + ext + '"');
+			if (newTagsStr) {
+				newTagsStr = ' ' + newTagsStr;
+			}
+			newFileName = base + newTagsStr + ext;
 		} else {
 			newFileName = photo.fileName.replace(oldTagsStr, newTagsStr);
 		}
 
-		console.log('newFileName:', newFileName);
+		
 		if (newFileName != photo.fileName) {
+			console.log('newFileName:', newFileName);
 			renameFile(photo.path, photo.fileName, newFileName);
+		} else {
+			console.log('No change');
 		}
 	};
 

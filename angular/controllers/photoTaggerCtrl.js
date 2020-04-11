@@ -28,6 +28,8 @@ photosTaggerApp.controller('photosTaggerCtrl', function($scope, $sce, $interval)
 	$scope.allTagsData = [];
 	$scope.allPhotos = photos;	// from photos.js
 	$scope.galleryPhotos = photos;
+	$scope.numTaggedPhotos = 0;
+	$scope.numUntaggedPhotos = 0;
 	
 	angular.forEach(photos, function(photo) {
 		photo.filePath = photo.path + '/' + photo.fileName;
@@ -40,6 +42,9 @@ photosTaggerApp.controller('photosTaggerCtrl', function($scope, $sce, $interval)
 			//console.log('tags:', tagsStr);
 			photo.tags = tagsStr.split(TAG_SPLIT);
 			addTags(photo.tags);
+			$scope.numTaggedPhotos++;
+		} else {
+			$scope.numUntaggedPhotos++;
 		}
 	});
 	//console.log('allTags:', $scope.allTagsMap);
@@ -54,11 +59,18 @@ photosTaggerApp.controller('photosTaggerCtrl', function($scope, $sce, $interval)
 		$scope.data.currentPhoto = $scope.galleryPhotos[rand];
 		//console.log('currentPhoto:', $scope.data.currentPhoto);
 		$(".tags input").focus();
+		if ($scope.data.currentPhoto.tags.length) {
+			$scope.nextPhoto();
+		}
 	};
 
 	$scope.onApplyPhoto = function(photo) {
 		// add tags to collection
 		addTags(photo.tags);
+		if (photo.tags.length) {
+			$scope.numTaggedPhotos++;
+			$scope.numUntaggedPhotos--;
+		}
 
 		$scope.nextPhoto();
 	};
@@ -90,19 +102,31 @@ photosTaggerApp.controller('photosTaggerCtrl', function($scope, $sce, $interval)
 	};
 
 	$scope.selectTag = function(tag) {
-		console.log('ctrl selectTag:', tag);
+		console.log('ctrl selectTag:', $scope.data.selectedTags);
 		$scope.data.selectedTag = tag.name;
 
 		$scope.galleryPhotos = $scope.allPhotos.filter(function(photo) {
-			return (photo.tags.includes(tag.name));
+			for (var i=0; i<photo.tags.length; i++) {
+				if ($scope.data.selectedTags.includes(photo.tags[i])) {
+					return true;
+				}
+			}
+			return false;
 		});
 	};
+
+	$scope.$on('selectTagsChanged', function() {
+		console.log('photosTaggerCtrl: selectTagsChanged');
+	});
 
 	$scope.selectPhoto = function(photo) {
 		console.log('ctrl selectPhoto:', photo);
 		$scope.data.currentPhoto = photo;
 	};
 
+	$scope.handleTagsDone = function(photo) {
+				console.log('handleTagsDone');
+			};
 
 	function addTags(tags) {
 		angular.forEach(tags, function(tagName) {

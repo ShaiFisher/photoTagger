@@ -30,6 +30,10 @@ photosTaggerApp
         		func(photo);
 			};
 
+			scope.handleTagsDone = function(photo) {
+				console.log('handleTagsDone');
+			};
+
 			scope.rotateRight = function(photo) {
 				console.log('rotateRight:', photo);
 				sendCommand('rotateRight: ' + photo.filePath);
