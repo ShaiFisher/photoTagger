@@ -6,7 +6,7 @@
   "dependencies": {
     "clipboardy": "^1.2.3",
     "interval": "^0.1.1",
-    "jimp": "^0.6.0",
+    "jimp": "^0.22.7",
     "ng-tags-input": "^3.2.0",
     "path": "^0.12.7"
   },
