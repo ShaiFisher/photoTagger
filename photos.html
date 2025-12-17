@@ -83,6 +83,19 @@
 	</div>
 </script>
 
+<script type="text/ng-template" id="commonTags.html">
+	<div class="" style="border: 1px solid; text-align: right;">
+		commonTags
+		<ul>
+			<li ng-repeat="tag in tags | orderBy:'-number'" ng-click="selectTag(tag)" 
+				class="tag" ng-class="{selected: selected.includes(tag.name)}">
+				{{tag.name}} ({{tag.number}})
+					<span ng-click="$event.stopPropagation(); selectTag(tag, true)"> +</span>
+			</li>
+		</ul>
+   </div>
+</script>
+
 <script type="text/ng-template" id="editTools.html">
 
 	<div class="row" style="text-align: center;">
@@ -125,9 +138,21 @@
 								add-on-space="true"
 								min-length="2"
 								placeholder="Tags">
-					    	<auto-complete source="getAvailableTags($query)" min-length="2"></auto-complete>
-					    </tags-input>
+				    	<auto-complete source="getAvailableTags($query)" min-length="2"></auto-complete>
+				    </tags-input>
+
+						<!-- <tags-list tags="allTags" selected="data.selectedTags" on-select="selectTag"></tags-list> -->
 				</div>
+
+		<!-- Top 10 Most Used Tags -->
+		<div class="col-sm-12" style="margin-top: 10px; text-align: left;">
+			<button ng-repeat="tag in suggestedTags" 
+					ng-click="addTagToPhoto(tag.name)" 
+					class="btn btn-sm btn-outline-primary" 
+					style="margin: 2px;">
+				<span ng-bind="tag.name"></span> (<span ng-bind="tag.number"></span>)
+			</button>
+		</div>
 			</div>
 		</div>
 		<div class="col-sm-6" style="text-align: right;">

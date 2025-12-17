@@ -26,7 +26,7 @@ if (process.argv.indexOf('-skipscan') < 0) {
 	buildPhotosFile(runPath);
 }
 
-console.log('Listening...');
+console.log('Listening... Open photos.html');
 listen();
 
 
@@ -119,31 +119,7 @@ function listen() {
 			var expectedPrefix = COMMAND_PREFIX + settings.safeWord + ': ';
 			if (newClipData.startsWith(expectedPrefix)) {
 				var command = newClipData.substring(expectedPrefix.length);
-				console.log('\ncommand:', command);
-				if (command.startsWith('applyTags: ')) {
-					var photoJson = command.substring(11);
-					var photo = new Photo(JSON.parse(photoJson));
-					checkScopeAndRun(photo.filePath, function() {
-						photo.applyTags();
-					});
-				} else if (command.startsWith('rotateRight: ')) {
-					var filePath = command.substring(13);
-					checkScopeAndRun(filePath, function() {
-						rotateRight(filePath);
-					});
-				} else if (command.startsWith('rotateLeft: ')) {
-					var filePath = command.substring(12);
-					checkScopeAndRun(filePath, function() {
-						rotateLeft(filePath);
-					});
-				} else if (command.startsWith('delete: ')) {
-					var filePath = command.substring(8);
-					checkScopeAndRun(filePath, function() {
-						deleteFile(filePath);
-					});
-				} else {
-					console.log('unknown command');
-				}
+				handleCommand(command);
 			} else {
 				console.log('wrong key, refresh the page.');
 			}
@@ -152,6 +128,34 @@ function listen() {
 	}
 
 	setTimeout(listen, interval({ seconds: 2 }));
+}
+
+function handleCommand(command) {
+	console.log('\ncommand:', command);
+	if (command.startsWith('applyTags: ')) {
+		var photoJson = command.substring(11);
+		var photo = new Photo(JSON.parse(photoJson));
+		checkScopeAndRun(photo.filePath, function() {
+			photo.applyTags();
+		});
+	} else if (command.startsWith('rotateRight: ')) {
+		var filePath = command.substring(13);
+		checkScopeAndRun(filePath, function() {
+			rotateRight(filePath);
+		});
+	} else if (command.startsWith('rotateLeft: ')) {
+		var filePath = command.substring(12);
+		checkScopeAndRun(filePath, function() {
+			rotateLeft(filePath);
+		});
+	} else if (command.startsWith('delete: ')) {
+		var filePath = command.substring(8);
+		checkScopeAndRun(filePath, function() {
+			deleteFile(filePath);
+		});
+	} else {
+		console.log('unknown command');
+	}
 }
 
 function checkScopeAndRun(filePath, func) {
@@ -222,7 +226,7 @@ function rotate(filePath, degree) {
 
 function rotateRight(filePath) {
 	console.log('rotateRight:', filePath);
-	rotate(filePath, 270);
+	rotate(filePath, -90);
 }
 
 function rotateLeft(filePath) {

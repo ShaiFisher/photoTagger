@@ -1,6 +1,6 @@
 photosTaggerApp
 //angular.module('photosTaggerApp')
-.directive('tagsList', [ '$rootScope',
+.directive('commonTags', [ '$rootScope',
 			function($rootScope) {
 	
     return {
@@ -8,13 +8,13 @@ photosTaggerApp
         replace : false,
 		scope: {
 			tags: '=',
-			//tagsMap: '=',
+			tagsMap: '=',
 			onSelect: '&',
 			selected: '='
 		},
-		templateUrl: 'tagsList.html',
+		templateUrl: 'commonTags.html',
         link: function(scope, element, attrs) {
-        	console.log('tags-list init:', scope.tags);
+        	//console.log('tags-list init');
         	scope.selected = scope.selected || [];
 
         	scope.selectTag = function(tag, add) {
