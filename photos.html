@@ -26,6 +26,17 @@
 
 <Body ng-controller="photosTaggerCtrl">
 
+<!-- Error notification -->
+<div id="errorNotification" style="display: none; position: fixed; top: 20px; right: 20px; background-color: #f44336; color: white; padding: 15px; border-radius: 5px; z-index: 9999; max-width: 400px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+	<strong>Error:</strong> <span id="errorMessage"></span>
+	<button onclick="document.getElementById('errorNotification').style.display='none'" style="float: right; background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; margin-left: 10px;">&times;</button>
+</div>
+
+<!-- Success notification -->
+<div id="successNotification" style="display: none; position: fixed; top: 20px; right: 20px; background-color: #4CAF50; color: white; padding: 15px; border-radius: 5px; z-index: 9999; max-width: 400px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+	<strong>Success:</strong> <span id="successMessage"></span>
+</div>
+
 
 <!--form>
 	<!- - filter - ->
@@ -157,11 +168,8 @@
 		</div>
 		<div class="col-sm-6" style="text-align: right;">
 			<div style="border:1px solid; display: inline-block; position: relative;">
-				<img src="{{photo.filePath}}" class="img-thumbnail" width="600" height="600"
+				<img src="{{photo.webPath || photo.filePath}}" class="img-thumbnail" width="600" height="600"
 					ng-click="applyTags(photo)"/>
-
-				<!-- hidden input for copying text -->
-				<input id="copyTextInput" type="text" style="position: absolute; top:0; left:0; z-index: -1;">
 			</div>
 		</div>
 	</div>

@@ -4,8 +4,8 @@
   "description": "Tag photos easily with HTML UI and NodeJS backend",
   "main": "PhotoTagger.js",
   "dependencies": {
-    "clipboardy": "^1.2.3",
-    "interval": "^0.1.1",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
     "jimp": "^0.22.7",
     "ng-tags-input": "^3.2.0",
     "path": "^0.12.7"

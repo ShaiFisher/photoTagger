@@ -10,7 +10,7 @@ photosTaggerApp
 		},
         template: 	
         	'<div class="thumbnail-image-container">' +
-				'<img src="{{photo.filePath}}" class="img-thumbnail" width="300" height="300">' +
+				'<img src="{{photo.webPath || photo.filePath}}" class="img-thumbnail" width="300" height="300">' +
 			'</div>',
 
         link: function(scope, element, attrs) {

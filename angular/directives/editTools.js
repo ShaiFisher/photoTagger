@@ -120,17 +120,33 @@ photosTaggerApp
 				console.log('handleTagsDone');
 			};
 
-			scope.rotateRight = function(photo) {
-				console.log('rotateRight:', photo);
-				sendCommand('rotateRight: ' + photo.filePath);
-			};
+		scope.rotateRight = function(photo) {
+			console.log('rotateRight:', photo);
+			sendCommand('rotateRight: ' + photo.filePath);
+			
+			// Wait 2 seconds and reload the photo
+			setTimeout(function() {
+				scope.$apply(function() {
+					// Add timestamp to force image reload
+					var basePath = (photo.webPath || photo.filePath).split('?')[0];
+					photo.webPath = basePath + '?t=' + new Date().getTime();
+				});
+			}, 2000);
+		};
 
-			scope.rotateLeft = function(photo) {
-				console.log('rotateLeft:', photo);
-				sendCommand('rotateLeft: ' + photo.filePath);
-			};
-
-			scope.deletePhoto = function(photo) {
+		scope.rotateLeft = function(photo) {
+			console.log('rotateLeft:', photo);
+			sendCommand('rotateLeft: ' + photo.filePath);
+			
+			// Wait 2 seconds and reload the photo
+			setTimeout(function() {
+				scope.$apply(function() {
+					// Add timestamp to force image reload
+					var basePath = (photo.webPath || photo.filePath).split('?')[0];
+					photo.webPath = basePath + '?t=' + new Date().getTime();
+				});
+			}, 2000);
+		};			scope.deletePhoto = function(photo) {
 				if (confirm('Are you sure?')) {
 					console.log('delete', photo);
 					sendCommand('delete: ' + photo.filePath);
@@ -174,15 +190,52 @@ photosTaggerApp
 			}
 
 			function sendCommand(command) {
-				copyText('PhotoTagger: ' + settings.safeWord + ': ' + command);
+				fetch('http://localhost:3000/command', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({ command: command })
+				})
+				.then(response => {
+					if (!response.ok) {
+						throw new Error('Server returned error: ' + response.status);
+					}
+					return response.json();
+				})
+				.then(data => {
+					console.log('Command sent:', data);
+					if (data.success) {
+						showNotification('Command executed successfully', 'success');
+					} else if (data.error) {
+						showNotification('Server error: ' + data.error, 'error');
+					}
+				})
+				.catch(error => {
+					console.error('Error sending command:', error);
+					showNotification('Failed to communicate with server. Make sure the server is running on port 3000. Error: ' + error.message, 'error');
+				});
 			}
 
-			function copyText(text) {
-				//console.log('copyText:', text);
-				$("#copyTextInput").val(text);
-				$("#copyTextInput").select();
-				document.execCommand('copy');
-			};
+			function showNotification(message, type) {
+				var notificationId = type === 'error' ? 'errorNotification' : 'successNotification';
+				var messageId = type === 'error' ? 'errorMessage' : 'successMessage';
+				
+				var notification = document.getElementById(notificationId);
+				var messageEl = document.getElementById(messageId);
+				
+				if (notification && messageEl) {
+					messageEl.textContent = message;
+					notification.style.display = 'block';
+					
+					// Auto-hide success messages after 3 seconds
+					if (type === 'success') {
+						setTimeout(function() {
+							notification.style.display = 'none';
+						}, 3000);
+					}
+				}
+			}
         }
     }
 }]);

@@ -1,11 +1,8 @@
 const fs = require('fs');
-const clipboardy = require('clipboardy');
 const path = require('path');
 const Jimp = require('jimp');
-const interval = require('interval');
-
-const COMMAND_PREFIX = 'PhotoTagger: ';
-const SAFE_WORD_LENGTH = 20;
+const express = require('express');
+const cors = require('cors');
 
 
 if (process.argv.length <= 2) {
@@ -14,42 +11,25 @@ if (process.argv.length <= 2) {
 }
 var runPath = process.argv[2];
 
-var clipData = '';
-
-var settings = {
-	safeWord: generateSafeWord()
-};
-//console.log('settings:', settings);
+const PORT = 3000;
 
 console.log(process.argv);
 if (process.argv.indexOf('-skipscan') < 0) {
 	buildPhotosFile(runPath);
 }
 
-console.log('Listening... Open photos.html');
-listen();
+startServer();
 
 
 
 ////////////////////////////////////////////////////////////
-
-function generateSafeWord() {
-	var chars = 'qwertyuiopasdfghjklzxcvbnm1234567890[];,.';
-	var key = '';
-	for (var i=0; i<SAFE_WORD_LENGTH; i++) {
-		var rand = Math.floor(Math.random() * chars.length);
-		key += chars[rand];
-	}
-	return key;
-};
 
 function buildPhotosFile(path) {
 	getPhotosList(path, function(photosList) {
 		//console.log('photosList:\n' + photosList);
 		console.log('writing file');
 		var photosJsonCode = 'var photos = \n' + JSON.stringify(photosList) + ';\n';
-		var settingsJsonCode = 'var settings = ' + JSON.stringify(settings) + ';';
-		fs.writeFileSync('photos.js', settingsJsonCode + photosJsonCode);
+		fs.writeFileSync('photos.js', photosJsonCode);
 	});
 }
 
@@ -105,29 +85,36 @@ function isImageInScope(filePath) {
 	return (isImage(filePath) && isInRunPath(filePath) && !hasWildcards(filePath));
 }
 
-function listen() {
-	try {
-		newClipData = clipboardy.readSync();
-	}
-	catch (err) {
-		console.log('error read clipboard:', err);
-	}
-		
-	if (newClipData != clipData) {
-		//console.log('newClipData:', newClipData);
-		if (newClipData.startsWith(COMMAND_PREFIX)) {
-			var expectedPrefix = COMMAND_PREFIX + settings.safeWord + ': ';
-			if (newClipData.startsWith(expectedPrefix)) {
-				var command = newClipData.substring(expectedPrefix.length);
-				handleCommand(command);
-			} else {
-				console.log('wrong key, refresh the page.');
+function startServer() {
+	const app = express();
+	
+	app.use(cors());
+	app.use(express.json());
+	app.use(express.static(__dirname));
+	
+	// Serve photos from the runPath directory
+	console.log('Serving photos from:', runPath);
+	app.use('/photos', express.static(path.resolve(runPath)));
+	
+	app.post('/command', (req, res) => {
+		try {
+			const { command } = req.body;
+			if (!command) {
+				return res.status(400).json({ error: 'Command is required' });
 			}
+			
+			handleCommand(command);
+			res.json({ success: true });
+		} catch (err) {
+			console.error('Error handling command:', err);
+			res.status(500).json({ error: err.message });
 		}
-		clipData = newClipData;
-	}
-
-	setTimeout(listen, interval({ seconds: 2 }));
+	});
+	
+	app.listen(PORT, () => {
+		console.log(`Server running on http://localhost:${PORT}`);
+		console.log(`Open http://localhost:${PORT}/photos.html in your browser`);
+	});
 }
 
 function handleCommand(command) {
@@ -159,47 +146,98 @@ function handleCommand(command) {
 }
 
 function checkScopeAndRun(filePath, func) {
+	console.log('Checking scope for:', filePath);
 	if (isImageInScope(filePath)) {
+		console.log('✓ File is in scope, executing command');
 		func();
 	} else {
-		console.log('file not in scope');
+		console.log('✗ BLOCKED: File not in scope, command rejected');
 	}
 }
 
 function renameFile(path, fileName, newFileName) {
+	const oldFilePath = path + '/' + fileName;
+	const newFilePath = path + '/' + newFileName;
+	
+	// Verify both old and new paths are within scanned directory
+	const absoluteRunPath = require('path').resolve(runPath);
+	const absoluteOldPath = require('path').resolve(oldFilePath);
+	const absoluteNewPath = require('path').resolve(newFilePath);
+	
+	if (!absoluteOldPath.startsWith(absoluteRunPath) || !absoluteNewPath.startsWith(absoluteRunPath)) {
+		console.error('SECURITY ERROR: Attempted to rename file outside scanned directory!');
+		console.error('  Scanned directory:', absoluteRunPath);
+		console.error('  Old file path:', absoluteOldPath);
+		console.error('  New file path:', absoluteNewPath);
+		return;
+	}
+	
 	var callback = function(ret) {
-		console.log('renamed.');
+		console.log('✓ File renamed successfully');
 	};
-	var oldFilePath = path + '/' + fileName;
-	var newFilePath = path + '/' + newFileName;
 	fs.rename(oldFilePath, newFilePath, callback);
 }
 
 function deleteFile(filePath) {
-	console.log('delete:', filePath);
+	console.log('Deleting file:', filePath);
+	
+	// Double-check the file is in scope before deletion
+	const absoluteRunPath = path.resolve(runPath);
+	const absoluteFilePath = path.resolve(filePath);
+	
+	if (!absoluteFilePath.startsWith(absoluteRunPath)) {
+		console.error('SECURITY ERROR: Attempted to delete file outside scanned directory!');
+		console.error('  Scanned directory:', absoluteRunPath);
+		console.error('  Attempted file:', absoluteFilePath);
+		return;
+	}
+	
+	if (!fs.existsSync(absoluteFilePath)) {
+		console.error('ERROR: File does not exist:', filePath);
+		return;
+	}
+	
 	fs.unlinkSync(filePath);
+	console.log('✓ File deleted successfully');
 }
 
 function isInRunPath(filePath) {
-	//console.log('isInRunPath: checking:', runPath, filePath);
-
-	if (path.isAbsolute(filePath)) {
-		//console.log('isAbsolute');
-		//return false;
-	}
-
-	var folders = filePath.split('/');
-	//console.log('folders:', folders);
-	for (var i=0; i<folders.length; i++) {
-		if (folders[i] == '..' ) {
-			console.log('folders contains ..');
+	try {
+		// Resolve both paths to absolute normalized paths
+		const absoluteRunPath = path.resolve(runPath);
+		const absoluteFilePath = path.resolve(filePath);
+		
+		// Get relative path from runPath to filePath
+		const relativePath = path.relative(absoluteRunPath, absoluteFilePath);
+		
+		// If relative path is empty, file is the run path itself
+		if (relativePath === '') {
 			return false;
 		}
+		
+		// If relative path starts with '..' or is absolute, file is outside runPath
+		if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+			console.log('File is outside scanned directory:', filePath);
+			return false;
+		}
+		
+		// Check if file actually exists within the scanned directory
+		if (!fs.existsSync(absoluteFilePath)) {
+			console.log('File does not exist:', filePath);
+			return false;
+		}
+		
+		// Verify the file is indeed within runPath by checking the resolved path
+		if (!absoluteFilePath.startsWith(absoluteRunPath)) {
+			console.log('File is not within scanned directory:', filePath);
+			return false;
+		}
+		
+		return true;
+	} catch (err) {
+		console.log('Error checking file path:', err.message);
+		return false;
 	}
-
-	var relative = path.relative(runPath, filePath);
-	//console.log('relative:', relative);
-	return (!relative.startsWith('..') && !relative.startsWith('/'));
 }
 
 function hasWildcards(filePath) {
@@ -236,10 +274,20 @@ function rotateLeft(filePath) {
 
 
 function Photo(photo, filePath) {
+	// Convert Windows path to web path
+	var webPath = filePath;
+	if (filePath) {
+		// Get relative path from runPath
+		var relativePath = path.relative(runPath, filePath);
+		// Convert Windows backslashes to forward slashes for web
+		webPath = '/photos/' + relativePath.replace(/\\/g, '/');
+	}
+	
 	photo = photo || {
 		path: 		path.dirname(filePath),
 		fileName: 	path.basename(filePath),
-		filePath: 	filePath
+		filePath: 	filePath,
+		webPath:	webPath
 	};
 
 	if (!photo.filePath) {
@@ -248,6 +296,12 @@ function Photo(photo, filePath) {
 		} else {
 			photo.filePath = photo.fileName
 		}
+	}
+	
+	// Ensure webPath is set for displaying in browser
+	if (!photo.webPath && photo.filePath) {
+		var relativePath = path.relative(runPath, photo.filePath);
+		photo.webPath = '/photos/' + relativePath.replace(/\\/g, '/');
 	}
 
 	photo.applyTags =  function() {
